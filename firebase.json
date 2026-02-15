@@ -7,10 +7,7 @@
       "**/node_modules/**"
     ],
     "frameworksBackend": {
-      "region": "asia-southeast1",
-      "memory": "512MiB",
-      "minInstances": 0,
-      "maxInstances": 10
+      "region": "asia-east1"
     }
   }
 }
