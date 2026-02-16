@@ -2,12 +2,12 @@
 import {useEffect, useState} from "react";
 import {collection, getDocs, query, where} from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import Header from "@/app/components/header";
-import Navbar from "@/app/components/navbar";
-import Footer from "@/app/components/footer";
-import BannerCarousel from '@/app/components/bannerCarousel';
+import Header from "@/components/header";
+import Navbar from "@/components/navbar";
+import Footer from "@/components/footer";
+import BannerCarousel from '@/components/bannerCarousel';
 import Image from "next/image";
-import ResourceModal, { Resource } from "@/app/components/resourceModal";
+import ResourceModal, { Resource } from "@/components/resourceModal";
 
 interface Tag {
     id: string;
@@ -103,17 +103,15 @@ export default function Home() {
                         id: doc.id,
                         title: data.title || "Chưa đặt tên",
                         description: data.description || "Không có mô tả",
-                        // Vì DB bạn chưa lưu tên tác giả, mình tạm lấy Avatar làm chuẩn, tên hiển thị là "Admin" hoặc bạn cần fetch thêm bảng Users
-                        author: "Admin",
-                        authorAvatar: data.avatar || "", // Link avatar từ freepik trong DB
+                        author: data.authorName,
+                        authorAvatar: data.avatar || "",
                         uploadDate: dateStr,
                         fileType: data.type || "Unknown",
                         fileSize: "Unknown", // DB chưa có trường này, tạm để Unknown
-                        license: "Miễn phí",
+                        license: data.license || "Miễn phí",
                         views: 0, // DB chưa có, tạm để 0
                         downloads: 0,
-                        tags: [],
-                        // TRƯỜNG QUAN TRỌNG ĐỂ HIỆN ẢNH BÌA
+                        tags: data.tags || [],
                         previewUrl: imageUrl,
                         fileURL: data.fileURL || ""
                     } as unknown as Resource;

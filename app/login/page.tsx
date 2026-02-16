@@ -38,7 +38,7 @@ export default function LoginPage() {
 
             // Đăng nhập thành công -> Chuyển hướng về trang chủ
             router.push('/');
-        } catch (err: any) {
+        } catch (err) {
             console.error(err);
             setError('Đăng nhập thất bại. Vui lòng thử lại!');
         } finally {

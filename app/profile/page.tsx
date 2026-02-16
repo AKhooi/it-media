@@ -5,8 +5,8 @@ import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import Image from 'next/image';
-import Header from '@/app/components/header';
-import Footer from '@/app/components/footer';
+import Header from '@/components/header';
+import Footer from '@/components/footer';
 
 export default function ProfilePage() {
     const router = useRouter();
