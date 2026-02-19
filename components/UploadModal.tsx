@@ -18,7 +18,7 @@
         fileURL: string;
         image: string;
         tags: string;
-        type: string;
+        formatFile: string;
         privacy: string;
         license: string;
     }
@@ -56,7 +56,7 @@
             fileURL: '',
             image: '',
             tags: '',
-            type: '',
+            formatFile: '',
             privacy: 'Công khai',
             license: 'Miễn phí'
         });
@@ -128,17 +128,49 @@
             setLoading(true);
             try {
                 const imageID = extractDriveID(formData.image);
+
+                // --- 🌟 BẮT ĐẦU LỌC VÀ TẠO TAGS 🌟 ---
+                // 1. Cắt chuỗi nhập vào thành mảng các tên tag
+                const inputTagNames = formData.tags
+                    .split(',')
+                    .map(t => t.trim())
+                    .filter(t => t !== ''); // Lọc bỏ nếu lỡ gõ dư dấu phẩy (VD: "tag1, , tag2")
+
+                const finalTagIDs: string[] = [];
+
+                // 2. Kiểm tra từng tag
+                for (const tagName of inputTagNames) {
+                    // Dò xem tag này đã có trong danh sách gợi ý chưa (không phân biệt hoa/thường)
+                    const existingTag = suggestedTags.find(
+                        tag => tag.name.toLowerCase() === tagName.toLowerCase()
+                    );
+
+                    if (existingTag) {
+                        // NẾU CÓ SẴN: Lấy ID cũ đưa vào mảng
+                        finalTagIDs.push(existingTag.id);
+                    } else {
+                        // NẾU LÀ TAG MỚI: Tạo thẳng 1 document mới vào bảng 'tags'
+                        const newTagRef = await addDoc(collection(db, "tags"), {
+                            name: tagName,
+                            categoryID: selectedCategory?.id, // Gắn vào danh mục đang chọn
+                            isActive: true
+                        });
+
+                        // Lấy ID tự động của Firebase (VD: "aBcD123...") đưa vào mảng
+                        finalTagIDs.push(newTagRef.id);
+                    }
+                }
+
                 await addDoc(collection(db, "resources"), {
                     ...formData,
                     image: imageID,
-                    categoryID: selectedCategory?.id,
+                    categoryId: selectedCategory?.id,
                     userId: user.uid,
-                    userEmail: user.email,
-                    avatar: user.photoURL,
                     tags: formData.tags.split(',').map(t => t.trim()),
                     createdAt: serverTimestamp(),
                     views: 0,
-                    downloads: 0
+                    downloads: 0,
+                    isActive: true
                 });
 
                 alert("Đăng bài thành công!");
@@ -155,7 +187,7 @@
             setStep(1);
             setFormData({
                 title: '', description: '', fileURL: '', image: '',
-                tags: '', type: '', privacy: 'Công khai', license: 'Miễn phí'
+                tags: '', formatFile: '', privacy: 'Công khai', license: 'Miễn phí'
             });
             onClose();
         };
@@ -228,7 +260,7 @@
                                 <div className="grid grid-cols-2 gap-3">
                                     <InputGroup label="Danh mục" value={selectedCategory?.name || ''} disabled={true} />
                                     <InputGroup label="Định dạng File" placeholder="PSD, AI, PPTX..."
-                                                value={formData.type} onChange={(v) => setFormData({...formData, type: v})} />
+                                                value={formData.formatFile} onChange={(v) => setFormData({...formData, formatFile: v})} />
                                 </div>
 
                                 <div>

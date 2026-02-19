@@ -20,16 +20,16 @@ export default function Footer() {
                     <div>
                         <h3 className="font-bold --main-font text-lg mb-4 uppercase tracking-wide">Liên hệ</h3>
                         <ul className="space-y-2 text-sm text-green-50">
-                            <li className="flex items-center gap-2">
+                            <li className="flex flex-wrap items-center gap-2">
                                 <span className="opacity-70">Email:</span>
-                                <a href="mailto:contact@designnonglam.com" className="hover:text-white hover:underline">contact@designnonglam.com</a>
+                                <a href="mailto:doankhoacongnghethongtin@hcmuaf.edu.vn" className="hover:text-white hover:underline">doankhoacongnghethongtin@hcmuaf.edu.vn</a>
                             </li>
                             <li className="flex items-center gap-2">
                                 <span className="opacity-70">Zalo:</span>
                                 <span className="hover:text-white">0987.654.321</span>
                             </li>
                             <li className="opacity-70">
-                                KP6, Linh Trung, Thủ Đức, TP.HCM
+                                KP33, Phường Linh Xuân, TP.HCM
                             </li>
                         </ul>
                     </div>
@@ -51,21 +51,21 @@ export default function Footer() {
                         <div className="flex gap-3">
 
                             {/* 1. Facebook Icon */}
-                            <a href="#" className="w-10 h-10 rounded-full bg-[#4b8240] flex items-center justify-center hover:bg-white hover:text-[#1877F2] transition-all duration-300 shadow-md group" aria-label="Facebook">
+                            <a target="_blank" href="https://www.facebook.com/dhkcntt.nlu" className="w-10 h-10 rounded-full bg-[#4b8240] flex items-center justify-center hover:bg-white hover:text-[#1877F2] transition-all duration-300 shadow-md group" aria-label="Facebook">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z" />
                                 </svg>
                             </a>
 
                             {/* 2. YouTube Icon */}
-                            <a href="#" className="w-10 h-10 rounded-full bg-[#4b8240] flex items-center justify-center hover:bg-white hover:text-[#FF0000] transition-all duration-300 shadow-md group" aria-label="YouTube">
+                            <a target="_blank" href="https://www.youtube.com/@Doan-HoiKhoaCNTT-NLU" className="w-10 h-10 rounded-full bg-[#4b8240] flex items-center justify-center hover:bg-white hover:text-[#FF0000] transition-all duration-300 shadow-md group" aria-label="YouTube">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z" />
                                 </svg>
                             </a>
 
                             {/* 3. Gmail Icon */}
-                            <a href="mailto:contact@designnonglam.com" className="w-10 h-10 rounded-full bg-[#4b8240] flex items-center justify-center hover:bg-white hover:text-[#EA4335] transition-all duration-300 shadow-md group" aria-label="Gmail">
+                            <a href="mailto:doankhoacongnghethongtin@hcmuaf.edu.vn" className="w-10 h-10 rounded-full bg-[#4b8240] flex items-center justify-center hover:bg-white hover:text-[#EA4335] transition-all duration-300 shadow-md group" aria-label="Gmail">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M24 5.457v13.909c0 .904-.732 1.636-1.636 1.636h-3.819v-5.818l-5.454 3.454-1.091-1.091-5.454-3.454v5.818h-3.819c-.904 0-1.636-.732-1.636-1.636v-13.909c0-.904.732-1.636 1.636-1.636h3.819l6.545 4.909 6.545-4.909h3.819c.904 0 1.636.732 1.636 1.636zm-5.455 1.636-6.545 4.909-6.545-4.909v-.545l6.545 4.909 6.545-4.909v.545z"/>
                                 </svg>
