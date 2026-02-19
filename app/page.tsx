@@ -1,6 +1,6 @@
 'use client';
 import {useEffect, useState} from "react";
-import {collection, getDocs, query, where} from "firebase/firestore";
+import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Header from "@/components/header";
 import Navbar from "@/components/navbar";
@@ -79,14 +79,15 @@ export default function Home() {
                 // Truy vấn: Lấy resources có categoryID trùng với menu đang chọn
                 const q = query(
                     collection(db, "resources"),
-                    where("categoryID", "==", currentCatId)
+                    where("categoryId", "==", currentCatId),
+                    where("isActive", "==", true)
                     // orderBy("createdAt", "desc") // Nếu muốn mới nhất lên đầu (nhớ tạo index trong Firebase Console nếu nó báo lỗi đỏ)
                 );
 
                 const querySnapshot = await getDocs(q);
 
-                const fetchedData = querySnapshot.docs.map((doc) => {
-                    const data = doc.data();
+                const fetchedDataPromises = querySnapshot.docs.map(async (resDoc) => {
+                    const data = resDoc.data();
 
                     // XỬ LÝ LINK ẢNH GOOGLE DRIVE
                     // data.image đang là ID (VD: 1lSl684...) -> Chuyển thành Link xem được
@@ -99,25 +100,58 @@ export default function Home() {
                         dateStr = new Date(data.createdAt.seconds * 1000).toLocaleDateString('vi-VN');
                     }
 
+                    let authorName = "Ẩn danh";
+                    let authorAvatar = "";
+
+                    if (data.userId) {
+                        try {
+                            const userSnap = await getDoc(doc(db, "users", data.userId));
+                            if (userSnap.exists()) {
+                                const userData = userSnap.data();
+                                authorName = userData.name;
+                                authorAvatar = userData.photoURL;
+                            }
+                        } catch (err) {
+                            console.error("Lỗi lấy thông tin user:", err);
+                        }
+                    }
+
+                    let tagNames: string[] = [];
+                    if (data.tags && Array.isArray(data.tags)) {
+                        try {
+                            // Chạy vòng lặp lấy từng tag dựa trên ID
+                            const tagPromises = data.tags.map(async (tagId: string) => {
+                                const tagSnap = await getDoc(doc(db, "tags", tagId));
+                                // Nếu tìm thấy thì trả về tên, không thì trả về ID gốc
+                                return tagSnap.exists() ? tagSnap.data().name : tagId;
+                            });
+
+                            tagNames = await Promise.all(tagPromises);
+                        } catch (err) {
+                            console.error("Lỗi lấy tags:", err);
+                        }
+                    }
+
                     return {
-                        id: doc.id,
+                        id: resDoc.id,
                         title: data.title || "Chưa đặt tên",
                         description: data.description || "Không có mô tả",
-                        author: data.authorName,
-                        authorAvatar: data.avatar || "",
+                        author: authorName,
+                        authorAvatar: authorAvatar,
                         uploadDate: dateStr,
-                        fileType: data.type || "Unknown",
+                        fileType: data.formatFile || "Unknown",
                         fileSize: "Unknown", // DB chưa có trường này, tạm để Unknown
-                        license: data.license || "Miễn phí",
-                        views: 0, // DB chưa có, tạm để 0
-                        downloads: 0,
-                        tags: data.tags || [],
+                        license: data.license,
+                        views: data.views,
+                        downloads: data.downloads,
+                        tags: tagNames,
                         previewUrl: imageUrl,
                         fileURL: data.fileURL || ""
                     } as unknown as Resource;
                 });
 
-                setResources(fetchedData);
+                const finalData = await Promise.all(fetchedDataPromises);
+                setResources(finalData);
             } catch (error) {
                 console.error("Lỗi lấy resources:", error);
             } finally {

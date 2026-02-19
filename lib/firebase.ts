@@ -3,13 +3,13 @@ import { getAuth, GoogleAuthProvider, setPersistence, browserLocalPersistence } 
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBYAadcUb2QGDbP84VjA7iST6tpH1hCZ0M",
-    authDomain: "it-creative-nlu.firebaseapp.com",
-    projectId: "it-creative-nlu",
-    storageBucket: "it-creative-nlu.firebasestorage.app",
-    messagingSenderId: "41494704403",
-    appId: "1:41494704403:web:1f83533da07189a2362ae6",
-    measurementId: "G-4V0C5Q4HQ8"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Logic để tránh khởi tạo lại nhiều lần trong Next.js (Singleton Pattern)
