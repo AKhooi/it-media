@@ -7,7 +7,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import BannerCarousel from '@/components/bannerCarousel';
 import Image from "next/image";
-import ResourceModal, { Resource } from "@/components/resourceModal";
+import ResourceModal, { Resource } from "@/components/ResourceModal";
 
 interface Tag {
     id: string;

@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import { useEffect } from "react";
+import { UserResource } from "@/app/profile/page";
 
 export interface Resource {
-    id: number;
+    id: string;
     title: string;
     description: string;
     author: string;
@@ -21,7 +22,7 @@ export interface Resource {
 }
 
 interface ResourceModalProps {
-    resource: Resource | null;
+    resource: UserResource | null;
     onClose: () => void;
 }
 
@@ -152,7 +153,7 @@ export default function ResourceModal({ resource, onClose }: ResourceModalProps)
                             </div>
                             <div>
                                 <p className="text-xs text-gray-500">Định dạng</p>
-                                <p className="font-bold text-gray-900 font-utm">{resource.fileType}</p>
+                                <p className="font-bold text-gray-900 font-utm">{resource.formatFile}</p>
                             </div>
                         </div>
                         {/* Item 2 */}
