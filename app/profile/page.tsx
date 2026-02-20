@@ -36,6 +36,7 @@ export interface UserResource {
     authorAvatar: string;
     categoryId: string; // Thêm trường này để dễ edit
     fileSize: string;
+    actionText?: string;
 }
 
 export default function ProfilePage() {

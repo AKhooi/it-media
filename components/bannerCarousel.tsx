@@ -12,9 +12,11 @@ import 'swiper/css/pagination';
 interface BannerCarouselProps {
     images: string[];
     delay?: number; // Tốc độ chạy slide
+    onImageClick?: (index: number) => void; // 🌟 1. THÊM DÒNG NÀY ĐỂ NHẬN SỰ KIỆN CLICK
 }
 
-export default function BannerCarousel({ images, delay = 3000 }: BannerCarouselProps) {
+// 🌟 2. KHAI BÁO THÊM onImageClick VÀO TRONG HÀM
+export default function BannerCarousel({ images, delay = 3000, onImageClick }: BannerCarouselProps) {
     return (
         <div className="w-full h-full rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition relative group">
             <Swiper
@@ -34,7 +36,12 @@ export default function BannerCarousel({ images, delay = 3000 }: BannerCarouselP
                 className="w-full h-full"
             >
                 {images.map((src, index) => (
-                    <SwiperSlide key={index} className="relative w-full h-full">
+                    <SwiperSlide
+                        key={index}
+                        // 🌟 3. THÊM SỰ KIỆN CLICK VÀ CON TRỎ CHUỘT (cursor-pointer) VÀO TỪNG SLIDE
+                        onClick={() => onImageClick && onImageClick(index)}
+                        className="relative w-full h-full cursor-pointer"
+                    >
                         {/* Dùng Next/Image với chế độ fill để ảnh tự co giãn đầy khung */}
                         <Image
                             src={src}

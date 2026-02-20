@@ -2,57 +2,69 @@
 
 import {useEffect, useState} from 'react';
 import {onAuthStateChanged, signInWithPopup} from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { auth, googleProvider, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { useAuth } from '@/context/AuthContext';
 
 export default function LoginPage() {
     const router = useRouter();
+    const { user, loading } = useAuth();
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const [isCheckingAuth, setIsCheckingAuth] = useState(true);
-
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // Nếu đã đăng nhập -> Chuyển hướng ngay lập tức
-                router.push('/profile');
-            } else {
-                // Nếu chưa đăng nhập -> Tắt màn hình chờ, hiện Form
-                setIsCheckingAuth(false);
-            }
-        });
+        if (!loading && user) {
+            router.push('/profile');
+        }
+    }, [user, loading, router]);
 
-        // Dọn dẹp listener khi thoát trang
-        return () => unsubscribe();
-    }, [router]);
-
-    // Hàm xử lý đăng nhập Google
     const handleGoogleLogin = async () => {
         setIsLoading(true);
         setError('');
 
         try {
-            // Mở Popup đăng nhập Google
-            await signInWithPopup(auth, googleProvider);
+            // Bước 1: Mở Popup đăng nhập Google
+            const result = await signInWithPopup(auth, googleProvider);
+            const loggedInUser = result.user; // Lấy thông tin người vừa đăng nhập xong
 
-            // Đăng nhập thành công -> Chuyển hướng về trang chủ
+            // Bước 2: Kiểm tra trong DB xem đã có thông tin người này chưa
+            const userRef = doc(db, "users", loggedInUser.uid);
+            const userSnap = await getDoc(userRef);
+
+            // Bước 3: Nếu chưa có -> Tài khoản mới -> Lưu vào DB kèm role 'guest'
+            if (!userSnap.exists()) {
+                await setDoc(userRef, {
+                    name: loggedInUser.displayName || "Người dùng ẩn danh",
+                    email: loggedInUser.email,
+                    photoURL: loggedInUser.photoURL || "",
+                    role: "guest",
+                    createdAt: serverTimestamp()
+                });
+                console.log("Đã tạo tài khoản mới với role Guest!");
+            }
+
+            // Đăng nhập và kiểm tra DB xong xuôi -> Chuyển hướng về trang chủ
             router.push('/');
         } catch (err) {
-            console.error(err);
+            console.error("Lỗi đăng nhập:", err);
             setError('Đăng nhập thất bại. Vui lòng thử lại!');
         } finally {
             setIsLoading(false);
         }
     };
 
-    if (isCheckingAuth) {
+    // Trong lúc Context đang check xem có ai đăng nhập không thì hiện cục xoay xoay
+    if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#eeeeee]">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4b9144]"></div>
             </div>
         );
     }
+
+    // Tránh nháy màn hình form đăng nhập 1 giây trước khi bị đá sang profile
+    if (user) return null;
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-[#eeeeee] p-4">

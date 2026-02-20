@@ -26,6 +26,70 @@ export default function Home() {
     const [currentCatId, setCurrentCatId] = useState<string | null>(null); // ID danh mục đang chọn
     const [tags, setTags] = useState<Tag[]>([]); // List tags động
 
+    // 🌟 1. State lưu bài viết nổi bật (Canva Pro)
+    const [featuredResource, setFeaturedResource] = useState<UserResource | null>(null);
+
+    const mainImages = [
+        "/img/notify1.webp",
+        "/img/Backdrop 2026 - 50.png"
+    ];
+
+    // 🌟 2. Kéo dữ liệu bài đó từ Firebase
+    useEffect(() => {
+        const fetchFeatured = async () => {
+            try {
+                // 🛑 THAY CHUỖI NÀY BẰNG ID THẬT CỦA BÀI CANVA PRO TRONG FIREBASE NHÉ:
+                const targetId = "8Nj0BJ0WUVrM5lmWEnjD";
+
+                const docRef = doc(db, "resources", targetId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const imageUrl = data.image ? `https://drive.google.com/thumbnail?id=${data.image}&sz=w800` : "";
+
+                    const resourceData: UserResource = {
+                        id: docSnap.id,
+                        title: data.title || "",
+                        description: data.description || "",
+                        fileURL: data.fileURL || "",
+                        image: data.image || "",
+                        previewUrl: imageUrl,
+                        tags: data.tags || [],
+                        formatFile: data.formatFile || "N/A",
+                        privacy: data.privacy || "public",
+                        license: data.license || "free",
+                        views: data.views || 0,
+                        downloads: data.downloads || 0,
+                        uploadDate: "Mới nhất",
+                        author: data.authorName || "Admin",
+                        authorAvatar: data.authorAvatar || "",
+                        categoryId: data.categoryId || "7",
+                        fileSize: data.fileSize || "Unknown",
+                        actionText: data.actionText || "TRUY CẬP NGAY"
+                    };
+                    setFeaturedResource(resourceData);
+                }
+            } catch (error) {
+                console.error("Lỗi lấy bài nổi bật:", error);
+            }
+        };
+        fetchFeatured();
+    }, []);
+
+    // 🌟 3. Tạo mảng ảnh động cho Banner chính
+    const dynamicMainImages = featuredResource && featuredResource.previewUrl
+        ? [featuredResource.previewUrl, ...mainImages] // Nhét ảnh Canva lên đầu tiên
+        : mainImages;
+
+    // 🌟 4. Hàm xử lý khi click vào Banner
+    const handleBannerClick = (index: number) => {
+        // Nếu click vào ảnh đầu tiên (index 0) và có bài nổi bật thì mở Modal
+        if (index === 0 && featuredResource) {
+            setSelectedResource(featuredResource);
+        }
+    };
+
     const leftTopImages = [
         "/img/605767988_1314334270732246_911786112392813220_n.jpg",
         "/img/605786348_1314334274065579_5836290016003964505_n.jpg",
@@ -39,10 +103,7 @@ export default function Home() {
         "/img/600237439_122204381402357607_4907330399187560766_n.jpg"
     ];
 
-    const mainImages = [
-        "/img/notify1.webp",
-        "/img/Backdrop 2026 - 50.png"
-    ];
+
 
     useEffect(() => {
         const fetchTagsByCategory = async () => {
@@ -81,8 +142,9 @@ export default function Home() {
             try {
                 const q = query(
                     collection(db, "resources"),
-                    where("categoryId", "==", currentCatId), // (Lưu ý: Check lại xem DB là categoryId hay categoryID nhé)
-                    where("isActive", "==", true)
+                    where("categoryId", "==", currentCatId),
+                    where("isActive", "==", true),
+                    where("privacy", "==", "public")
                 );
 
                 const querySnapshot = await getDocs(q);
@@ -153,7 +215,8 @@ export default function Home() {
                         author: authorName,
                         authorAvatar: authorAvatar,
                         categoryId: data.categoryId || "",
-                        fileSize: "Unknown"
+                        fileSize: "Unknown",
+                        actionText: data.actionText || ""
                     } as UserResource; // Ép kiểu đàng hoàng và hợp lệ
                 });
 
@@ -180,7 +243,14 @@ export default function Home() {
                             <div className="flex-1 relative"><BannerCarousel images={leftTopImages} delay={2500} /></div>
                             <div className="flex-1 relative"><BannerCarousel images={leftBottomImages} delay={3500} /></div>
                         </div>
-                        <div className="md:col-span-2 h-full relative"><BannerCarousel images={mainImages} delay={3000} /></div>
+                        <div className="md:col-span-2 h-full relative cursor-pointer">
+                            {/* Ô to: Dùng mảng ảnh động và truyền thêm sự kiện Click */}
+                            <BannerCarousel
+                                images={dynamicMainImages}
+                                delay={3000}
+                                onImageClick={handleBannerClick}
+                            />
+                        </div>
                     </div>
                 </div>
             </section>
