@@ -1,4 +1,5 @@
 'use client';
+
 import {useEffect, useState} from "react";
 import {collection, doc, getDoc, getDocs, query, where} from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -7,7 +8,8 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import BannerCarousel from '@/components/bannerCarousel';
 import Image from "next/image";
-import ResourceModal, { Resource } from "@/components/ResourceModal";
+import ResourceModal from "@/components/ResourceModal"; // Bỏ import { Resource } đi
+import { UserResource } from "@/app/profile/page"; // 🌟 Mượn chuẩn cấu trúc từ trang Profile sang
 
 interface Tag {
     id: string;
@@ -16,8 +18,9 @@ interface Tag {
 }
 
 export default function Home() {
-    const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
-    const [resources, setResources] = useState<Resource[]>([]);
+    // 🌟 Đổi State sang dùng UserResource
+    const [selectedResource, setSelectedResource] = useState<UserResource | null>(null);
+    const [resources, setResources] = useState<UserResource[]>([]);
     const [loadingRes, setLoadingRes] = useState(false);
 
     const [currentCatId, setCurrentCatId] = useState<string | null>(null); // ID danh mục đang chọn
@@ -43,12 +46,9 @@ export default function Home() {
 
     useEffect(() => {
         const fetchTagsByCategory = async () => {
-            if (!currentCatId) return; // Chưa có ID thì thôi
+            if (!currentCatId) return;
 
             try {
-                // Truy vấn: Lấy tags có categoryID == currentCatId
-                // Lưu ý: Trong Firebase bạn lưu categoryID là string "5" hay number 5 thì nhớ check kỹ nhé.
-                // Code này đang giả định là String giống ảnh bạn gửi.
                 const q = query(
                     collection(db, "tags"),
                     where("categoryID", "==", currentCatId),
@@ -70,18 +70,19 @@ export default function Home() {
         fetchTagsByCategory();
     }, [currentCatId]);
 
+    // 🌟 HÀM FETCH RESOURCES (ĐÃ SỬA CHUẨN)
     useEffect(() => {
         const fetchResources = async () => {
-            if (!currentCatId) return; // Chưa chọn danh mục thì khoan hãy lấy
+            if (!currentCatId) return;
 
             setLoadingRes(true);
+            setResources([]); // Xóa data cũ đi trước khi load data tab mới
+
             try {
-                // Truy vấn: Lấy resources có categoryID trùng với menu đang chọn
                 const q = query(
                     collection(db, "resources"),
-                    where("categoryId", "==", currentCatId),
+                    where("categoryId", "==", currentCatId), // (Lưu ý: Check lại xem DB là categoryId hay categoryID nhé)
                     where("isActive", "==", true)
-                    // orderBy("createdAt", "desc") // Nếu muốn mới nhất lên đầu (nhớ tạo index trong Firebase Console nếu nó báo lỗi đỏ)
                 );
 
                 const querySnapshot = await getDocs(q);
@@ -90,11 +91,12 @@ export default function Home() {
                     const data = resDoc.data();
 
                     // XỬ LÝ LINK ẢNH GOOGLE DRIVE
-                    // data.image đang là ID (VD: 1lSl684...) -> Chuyển thành Link xem được
+                    // (Lưu ý: Bạn đang viết sai cú pháp chuỗi template literals. Dấu {} phải có $ phía trước)
                     const driveImageId = data.image;
-                    const imageUrl = driveImageId ? `https://lh3.googleusercontent.com/d/${driveImageId}` : null;
+                    // 🌟 Sửa lại link ảnh Drive chuẩn:
+                    const imageUrl = driveImageId ? `https://drive.google.com/thumbnail?id=${driveImageId}&sz=w800` : "";
 
-                    // XỬ LÝ NGÀY THÁNG (Timestamp -> String)
+                    // XỬ LÝ NGÀY THÁNG
                     let dateStr = "Vừa xong";
                     if (data.createdAt && data.createdAt.seconds) {
                         dateStr = new Date(data.createdAt.seconds * 1000).toLocaleDateString('vi-VN');
@@ -118,11 +120,12 @@ export default function Home() {
 
                     let tagNames: string[] = [];
                     if (data.tags && Array.isArray(data.tags)) {
+                        // 🌟 THÊM BỘ LỌC CHỐNG LỖI RỖNG TAGS TỪ FIREBASE
+                        const validTagIds = data.tags.filter((id: unknown): id is string => typeof id === 'string' && id.trim() !== '');
+
                         try {
-                            // Chạy vòng lặp lấy từng tag dựa trên ID
-                            const tagPromises = data.tags.map(async (tagId: string) => {
-                                const tagSnap = await getDoc(doc(db, "tags", tagId));
-                                // Nếu tìm thấy thì trả về tên, không thì trả về ID gốc
+                            const tagPromises = validTagIds.map(async (tagId: string) => {
+                                const tagSnap = await getDoc(doc(db, "tags", tagId.trim()));
                                 return tagSnap.exists() ? tagSnap.data().name : tagId;
                             });
 
@@ -132,22 +135,26 @@ export default function Home() {
                         }
                     }
 
+                    // 🌟 TRẢ VỀ CHUẨN BỘ KHUNG UserResource (Không ép kiểu lươn lẹo nữa)
                     return {
                         id: resDoc.id,
                         title: data.title || "Chưa đặt tên",
                         description: data.description || "Không có mô tả",
+                        fileURL: data.fileURL || "",
+                        image: data.image || "",
+                        previewUrl: imageUrl,
+                        tags: tagNames,
+                        formatFile: data.formatFile || "Unknown",
+                        privacy: data.privacy || "Công khai",
+                        license: data.license || "Miễn phí",
+                        views: data.views || 0,
+                        downloads: data.downloads || 0,
+                        uploadDate: dateStr,
                         author: authorName,
                         authorAvatar: authorAvatar,
-                        uploadDate: dateStr,
-                        fileType: data.formatFile || "Unknown",
-                        fileSize: "Unknown", // DB chưa có trường này, tạm để Unknown
-                        license: data.license,
-                        views: data.views,
-                        downloads: data.downloads,
-                        tags: tagNames,
-                        previewUrl: imageUrl,
-                        fileURL: data.fileURL || ""
-                    } as unknown as Resource;
+                        categoryId: data.categoryId || "",
+                        fileSize: "Unknown"
+                    } as UserResource; // Ép kiểu đàng hoàng và hợp lệ
                 });
 
                 const finalData = await Promise.all(fetchedDataPromises);
@@ -164,67 +171,35 @@ export default function Home() {
 
     return (
         <main className="min-h-screen bg-[#eeeeee] font-sans">
-
-            {/* --- 1. HEADER --- */}
+            {/* --- (Phần UI Header, Banner, Navbar giữ nguyên không đổi) --- */}
             <Header/>
-            {/* --- 2. MAIN CONTENT (GRID SYSTEM) --- */}
             <section className="h-[calc(100vh-140px)] p-4 md:p-6 w-full">
                 <div className="container mx-auto h-full">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
-
-                        {/* Cột trái */}
                         <div className="md:col-span-1 flex flex-col gap-4 h-full">
-                            {/* Ô trên: Chạy nhanh (2.5 giây đổi ảnh) */}
-                            <div className="flex-1 relative">
-                                <BannerCarousel images={leftTopImages} delay={2500} />
-                            </div>
-
-                            {/* Ô dưới: Chạy chậm hơn (3.5 giây đổi ảnh) */}
-                            <div className="flex-1 relative">
-                                <BannerCarousel images={leftBottomImages} delay={3500} />
-                            </div>
+                            <div className="flex-1 relative"><BannerCarousel images={leftTopImages} delay={2500} /></div>
+                            <div className="flex-1 relative"><BannerCarousel images={leftBottomImages} delay={3500} /></div>
                         </div>
-
-                        {/* Cột phải (Cột chính) */}
-                        <div className="md:col-span-2 h-full relative">
-                            {/* Ô to: Chạy bình thường (3 giây) */}
-                            <BannerCarousel images={mainImages} delay={3000} />
-                        </div>
-
+                        <div className="md:col-span-2 h-full relative"><BannerCarousel images={mainImages} delay={3000} /></div>
                     </div>
                 </div>
             </section>
 
-            {/* --- 3. FILTER BAR (NAVBAR) --- */}
             <Navbar activeCategoryId={currentCatId} onSelectCategory={(id) => setCurrentCatId(id)}/>
 
-            {/* --- 4. CONTENT --- */}
-            {/* 1. Sub-tags Bar (Hàng nút xanh rêu đậm bên dưới Navbar) */}
             <div className="bg-[#eeeeee] py-4">
                 <div className="container mx-auto px-4">
                     <div className="flex flex-wrap gap-2 justify-center min-h-[40px]">
-                        {/* Nếu chưa chọn danh mục hoặc không có tag nào */}
-                        {tags.length === 0 && currentCatId && (
-                            <span className="text-gray-400 text-sm italic"></span>
-                        )}
-
-                        {/* Render Tags lấy từ Firebase */}
+                        {tags.length === 0 && currentCatId && (<span className="text-gray-400 text-sm italic"></span>)}
                         {tags.map((tag) => (
-                            <button
-                                key={tag.id}
-                                className="bg-[#1a4a28] text-white text-xs font-bold px-4 py-2 rounded-[4px] hover:bg-green-800 transition shadow-sm uppercase animate-in fade-in zoom-in duration-300"
-                            >
-                                {tag.name}
-                            </button>
+                            <button key={tag.id} className="bg-[#1a4a28] text-white text-xs font-bold px-4 py-2 rounded-[4px] hover:bg-green-800 transition shadow-sm uppercase animate-in fade-in zoom-in duration-300">{tag.name}</button>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* 2. Main Content Container (Cái bảng trắng to đùng bo góc) */}
             <section className="px-4 md:px-6 pb-10 flex-grow">
                 <div className="container mx-auto bg-white rounded-[30px] p-6 md:p-10 shadow-sm min-h-[500px]">
-
                     {loadingRes ? (
                         <div className="text-center py-20 text-gray-500">Đang tải dữ liệu...</div>
                     ) : resources.length === 0 ? (
@@ -232,28 +207,17 @@ export default function Home() {
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                             {resources.map((item) => (
+                                // 🌟 Khi click, truyền thẳng object 'item' chuẩn UserResource
                                 <div key={item.id} className="group cursor-pointer" onClick={() => setSelectedResource(item)}>
-
-                                    {/* HIỂN THỊ ẢNH TỪ GOOGLE DRIVE */}
                                     <div className="aspect-[4/3] bg-[#4b9144] rounded-2xl mb-3 shadow-sm group-hover:shadow-md transition-all group-hover:-translate-y-1 relative overflow-hidden">
                                         {item.previewUrl && (
-                                            <Image
-                                                src={item.previewUrl}
-                                                alt={item.title}
-                                                fill
-                                                className="object-cover"
-                                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                            />
+                                            <Image src={item.previewUrl} alt={item.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
                                         )}
                                     </div>
-
                                     <div className="px-1">
                                         <div className="font-utm font-bold text-lg text-gray-800 truncate">{item.title}</div>
-                                        {/* Hiển thị avatar nhỏ xíu nếu có */}
                                         <div className="flex items-center gap-2 mt-1">
-                                            {item.authorAvatar && (
-                                                <img src={item.authorAvatar} alt="avt" className="w-5 h-5 rounded-full object-cover"/>
-                                            )}
+                                            {item.authorAvatar && (<img src={item.authorAvatar} alt="avt" className="w-5 h-5 rounded-full object-cover"/>)}
                                             <div className="text-sm text-gray-500 font-sans truncate">bởi {item.author}</div>
                                         </div>
                                     </div>
@@ -264,10 +228,9 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* --- 5. FOOTER --- */}
             <Footer/>
 
-            {/* --- 6. RESOURCE MODAL --- */}
+            {/* 🌟 Truyền data vào ResourceModal chuẩn đét không còn lỗi */}
             <ResourceModal resource={selectedResource} onClose={() => setSelectedResource(null)}/>
         </main>
     );
