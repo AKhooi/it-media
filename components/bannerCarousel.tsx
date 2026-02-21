@@ -20,8 +20,12 @@ export default function BannerCarousel({ images, delay = 3000, onImageClick }: B
     return (
         <div className="w-full h-full rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition relative group">
             <Swiper
+                key={images.length}
                 spaceBetween={0}
                 effect={'fade'} // Hiệu ứng mờ dần (sang hơn kiểu trượt ngang)
+                speed={1000}
+                observer={true} // 🌟 3. Báo cho Swiper biết nếu HTML bên trong thay đổi thì tự update
+                observeParents={true}
                 centeredSlides={true}
                 loop={true} // Chạy vòng lặp vô tận
                 autoplay={{

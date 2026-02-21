@@ -1,5 +1,7 @@
 'use client';
 
+import { doc, updateDoc, increment } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 import Image from "next/image";
 import {useEffect, useState} from "react";
 import { useAuth } from "@/context/AuthContext";
@@ -44,6 +46,31 @@ export default function ResourceModal({ resource, onClose }: ResourceModalProps)
         return () => window.removeEventListener("keydown", handleEsc);
     }, [onClose]);
 
+    // 🌟 XỬ LÝ LƯỢT XEM (VIEWS)
+    useEffect(() => {
+        if (!resource?.id) return;
+
+        const recordView = async () => {
+            // Check xem session này người ta đã xem bài này chưa (chống spam view)
+            const viewedKey = `viewed_${resource.id}`;
+            if (!sessionStorage.getItem(viewedKey)) {
+                try {
+                    // Cộng 1 vào Database
+                    const resourceRef = doc(db, "resources", resource.id);
+                    await updateDoc(resourceRef, {
+                        views: increment(1)
+                    });
+                    // Đánh dấu là đã xem trong phiên này
+                    sessionStorage.setItem(viewedKey, "true");
+                } catch (error) {
+                    console.error("Lỗi tăng view:", error);
+                }
+            }
+        };
+
+        recordView();
+    }, [resource?.id]);
+
     if (!resource) return null;
 
     // 🌟 Check xem đây có phải là danh mục Thủ thuật/Link không
@@ -62,13 +89,25 @@ export default function ResourceModal({ resource, onClose }: ResourceModalProps)
         return url;
     };
 
-    const handleDownloadClick = (e: React.MouseEvent) => {
+    const handleDownloadClick = async (e: React.MouseEvent) => {
         e.preventDefault();
 
         if (!user) {
             setShowLoginPrompt(true);
         } else {
-            // 🌟 Logic MỚI: Nếu là Link/Thủ thuật -> Mở thẳng fileURL, bỏ qua ép tải
+            // 1. TĂNG DOWNLOAD TRONG DATABASE
+            if (resource?.id) {
+                try {
+                    const resourceRef = doc(db, "resources", resource.id);
+                    await updateDoc(resourceRef, {
+                        downloads: increment(1)
+                    });
+                } catch (error) {
+                    console.error("Lỗi tăng download:", error);
+                }
+            }
+
+            //Nếu là Link/Thủ thuật -> Mở thẳng fileURL, bỏ qua ép tải
             const finalLink = isTrickCategory ? resource.fileURL : getDirectDownloadUrl(resource.fileURL);
 
             if (finalLink) {
